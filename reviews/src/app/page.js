@@ -57,7 +57,7 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 relative">
-        <h2 className="text-2xl font-bold text-center mb-1">
+        <h2 className="text-2xl font-bold text-center mb-1 ">
           Review Digital Paaji Academy ⭐
         </h2>
 
