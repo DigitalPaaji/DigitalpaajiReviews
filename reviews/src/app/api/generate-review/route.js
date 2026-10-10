@@ -1,5 +1,52 @@
+
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+
+export const runtime = "nodejs";
+
+function generateFallbackReviews(businessName, stars) {
+  const rating = Number(stars);
+
+  const templates = {
+    5: [
+      `I had an excellent experience with ${businessName}. The overall service was professional and pleasant.`,
+      `Really happy with my experience at ${businessName}. The service met my expectations.`,
+      `A very positive experience with ${businessName}. I appreciated the professional approach.`,
+      `I was pleased with the service provided by ${businessName}. Overall, a smooth experience.`,
+      `My experience with ${businessName} was great. I would consider returning in the future.`,
+    ],
+    4: [
+      `I had a good experience with ${businessName}. Overall, I was satisfied with the service.`,
+      `The experience with ${businessName} was positive, with a few small areas that could improve.`,
+      `Good overall service from ${businessName}. A little more attention to detail could make it even better.`,
+      `I was happy with most aspects of my experience with ${businessName}.`,
+      `A generally positive experience with ${businessName}. There is some room for improvement.`,
+    ],
+    3: [
+      `My experience with ${businessName} was average overall. Some aspects were good, while others could improve.`,
+      `The service from ${businessName} was reasonable, although the overall experience could be more consistent.`,
+      `I had a mixed experience with ${businessName}. There were both positive aspects and areas to improve.`,
+      `Overall, my experience with ${businessName} was satisfactory but not particularly memorable.`,
+      `The experience with ${businessName} was okay. A few improvements could make a difference.`,
+    ],
+    2: [
+      `My experience with ${businessName} was below expectations. Some aspects of the service could improve.`,
+      `I was not fully satisfied with my experience with ${businessName}. Better communication would help.`,
+      `The experience with ${businessName} could have been better. There is room for improvement.`,
+      `I expected a better experience with ${businessName}. Some parts of the service disappointed me.`,
+      `My experience with ${businessName} was not ideal. I hope the service improves.`,
+    ],
+    1: [
+      `I was disappointed with my experience with ${businessName}. The service did not meet my expectations.`,
+      `Unfortunately, my experience with ${businessName} was unsatisfactory.`,
+      `I had a difficult experience with ${businessName} and hope the service improves.`,
+      `My experience with ${businessName} fell short of what I expected.`,
+      `I was not happy with my experience with ${businessName}. There is significant room for improvement.`,
+    ],
+  };
+
+  return templates[rating] || templates[5];
+}
 
 export async function POST(request) {
   try {
@@ -15,314 +62,113 @@ export async function POST(request) {
       customerExperience,
     } = body;
 
-    if (!businessName || !stars) {
+    if (typeof businessName !== "string" || !businessName.trim()) {
       return NextResponse.json(
-        {
-          error: "Business name and star rating are required.",
-        },
+        { error: "Business name is required." },
         { status: 400 }
       );
-    }
-
-    if (!process.env.GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY is missing.");
-
-      return NextResponse.json({
-        reviews: generateFallbackReviews(
-          businessName,
-          location,
-          stars
-        ),
-      });
     }
 
     const rating = Number(stars);
 
-    if (rating < 1 || rating > 5) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return NextResponse.json(
-        {
-          error: "Star rating must be between 1 and 5.",
-        },
+        { error: "Star rating must be between 1 and 5." },
         { status: 400 }
       );
     }
 
-    const companyDetails = `
-Business Name: ${businessName}
-Location: ${location || "Not specified"}
-Industry: ${industry || "General business"}
-Business Description: ${
-      description || "A professional local business serving customers."
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      console.error("[GENERATE REVIEW] GEMINI_API_KEY is missing");
+
+      return NextResponse.json({
+        reviews: generateFallbackReviews(businessName, rating),
+        source: "fallback",
+        warning: "Gemini API key is not configured.",
+      });
     }
-Services Offered: ${services || "Not specified"}
-Customer Experience: ${
-      customerExperience || "General customer experience."
-    }
-`;
 
-    let ratingInstruction = "";
-
-    switch (rating) {
-      case 5:
-        ratingInstruction = `
-Generate enthusiastic 5-star reviews.
-
-The customer should sound genuinely impressed and satisfied.
-Mention specific positive aspects of the business where appropriate.
-The review should feel natural, personal and authentic rather than promotional.
-
-Do NOT make the review sound like an advertisement.
-Do NOT exaggerate with unrealistic claims.
-`;
-
-        break;
-
-      case 4:
-        ratingInstruction = `
-Generate positive 4-star reviews.
-
-The customer is satisfied overall but should sound slightly more realistic
-than a perfect 5-star review.
-
-Include praise along with a small casual observation or minor area that
-could be improved, without making the business sound bad.
-
-The tone should remain positive and natural.
-`;
-
-        break;
-
-      case 3:
-        ratingInstruction = `
-Generate balanced 3-star reviews.
-
-The customer experience was average.
-Mention some positive aspects while also mentioning one or two genuine-sounding
-areas that could be improved.
-
-Do not be insulting or overly negative.
-The review should sound like a normal customer giving honest feedback.
-`;
-
-        break;
-
-      case 2:
-        ratingInstruction = `
-Generate polite but critical 2-star reviews.
-
-The customer had several issues with their experience.
-Clearly mention areas that could be improved while keeping the tone respectful.
-
-Do not invent serious accusations, illegal activity, discrimination,
-fraud, safety incidents or other extreme claims.
-`;
-
-        break;
-
-      case 1:
-        ratingInstruction = `
-Generate respectful 1-star reviews.
-
-The customer was very dissatisfied.
-Explain the main source of dissatisfaction in a realistic and specific way.
-
-Do not make defamatory claims.
-Do not accuse the company or employees of crimes.
-Keep the feedback focused on the customer's experience.
-`;
-
-        break;
-
-      default:
-        ratingInstruction = `
-Generate a natural customer review matching the selected rating.
-`;
-    }
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `
-You are an expert at writing realistic customer feedback for local businesses.
+Generate exactly 5 suggested review drafts for a customer to edit
+so each reflects their own genuine experience. Do not present invented
+experiences as verified facts.
 
-IMPORTANT:
-These are review DRAFTS/SUGGESTIONS for customers.
-Do not pretend that you personally visited the business.
-Do not invent highly specific facts that were not provided.
-Do not mention that you are an AI.
-Do not use marketing language.
-Do not use hashtags.
-Do not use emojis unless they naturally fit the customer's tone.
+Business: ${businessName.trim()}
+Location: ${location || "Not specified"}
+Industry: ${industry || "Not specified"}
+Description: ${description || "Not specified"}
+Services: ${services || "Not specified"}
+Customer's own experience: ${customerExperience || "Not provided"}
+Requested rating: ${rating}/5
 
-BUSINESS INFORMATION:
-${companyDetails}
-
-SELECTED CUSTOMER RATING:
-${rating}/5 stars
-
-${ratingInstruction}
-
-CUSTOMER EXPERIENCE CONTEXT:
-${customerExperience || "No additional experience provided."}
-
-WRITING REQUIREMENTS:
-
-1. Generate exactly 5 different review options.
-2. Each review should be approximately 40–80 words.
-3. Every review must be relevant to the business.
-4. Use the business name naturally where appropriate, but do not repeat it excessively.
-5. Avoid making all five reviews sound alike.
-6. Vary sentence structure and vocabulary.
-7. Make them sound like different real customers.
-8. Do not include quotation marks around the review itself.
-9. Do not mention information that is not provided in the business details.
-10. Match the selected star rating accurately.
-11. Do not create fake specific employee names, prices, dates or transactions.
-12. Do not make medical, legal, financial or safety claims unless explicitly supplied.
-
-OUTPUT REQUIREMENT:
-
-Return ONLY valid JSON.
-
-The response must be an object in exactly this format:
-
-{
-  "reviews": [
-    "Review 1",
-    "Review 2",
-    "Review 3",
-    "Review 4",
-    "Review 5"
-  ]
-}
-
-No markdown.
-No code block.
-No explanation.
+Write natural, distinct drafts that match the rating.
+Do not invent visits, transactions, employees, or specific events.
+Keep each draft around 30–70 words.
+Return only JSON in this format:
+{"reviews":["draft 1","draft 2","draft 3","draft 4","draft 5"]}
 `;
 
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
+    console.log("[GENERATE REVIEW] Calling Gemini", {
+      model: "gemini-2.5-flash",
+      rating,
     });
 
-    const response = await ai.models.generateContent({
+    const result = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
     });
 
-    let rawText = response.text || "";
+    const rawText = result.text?.trim();
 
-    rawText = rawText
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
+    if (!rawText) {
+      throw new Error("Gemini returned an empty response.");
+    }
+
+    const cleanedText = rawText
+      .replace(/^```(?:json)?\s*/i, "")
       .replace(/\s*```$/i, "")
       .trim();
 
-    let parsed;
-
-    try {
-      parsed = JSON.parse(rawText);
-    } catch (error) {
-      console.error("Gemini JSON parse error:", error);
-      console.error("Gemini response:", rawText);
-
-      return NextResponse.json({
-        reviews: generateFallbackReviews(
-          businessName,
-          location,
-          rating
-        ),
-      });
-    }
+    const parsed = JSON.parse(cleanedText);
 
     if (
-      !parsed ||
       !Array.isArray(parsed.reviews) ||
-      parsed.reviews.length === 0
+      parsed.reviews.length === 0 ||
+      !parsed.reviews.every(
+        (review) => typeof review === "string" && review.trim()
+      )
     ) {
-      return NextResponse.json({
-        reviews: generateFallbackReviews(
-          businessName,
-          location,
-          rating
-        ),
-      });
+      throw new Error("Gemini returned an invalid reviews format.");
     }
+
+    console.log("[GENERATE REVIEW] Gemini returned reviews:", parsed.reviews.length);
 
     return NextResponse.json({
       reviews: parsed.reviews.slice(0, 5),
+      source: "gemini",
       business: {
-        name: businessName,
+        name: businessName.trim(),
         location,
         industry,
         stars: rating,
       },
     });
   } catch (error) {
-    console.error("Review generation error:", error);
+    console.error("[GENERATE REVIEW] Failed:", error);
 
     return NextResponse.json(
       {
-        reviews: [
-          "I had a good overall experience and appreciated the service provided.",
-          "The team was professional and the overall experience was satisfactory.",
-          "The service was handled well and I was reasonably satisfied with the experience.",
-        ],
+        error: "Unable to generate AI review suggestions.",
+        details:
+          process.env.NODE_ENV === "development"
+            ? error.message
+            : undefined,
       },
-      { status: 200 }
+      { status: 500 }
     );
   }
-}
-
-function generateFallbackReviews(
-  businessName,
-  location,
-  stars
-) {
-  const rating = Number(stars);
-
-  if (rating === 5) {
-    return [
-      `Really happy with my experience at ${businessName}. The service was professional, smooth and well handled from start to finish. I would definitely recommend them to others looking for a reliable business.`,
-      `Excellent experience with ${businessName}. The team was helpful, professional and made the overall process very easy. I was genuinely satisfied with the service and would be happy to visit again.`,
-      `Had a great experience at ${businessName}. Everything was handled professionally and the service quality was impressive. Definitely a business I would recommend to others.`,
-      `Very pleased with the service at ${businessName}. The overall experience was smooth and the team was friendly and professional. Would happily recommend them.`,
-      `A really positive experience with ${businessName}. Good service, professional approach and a pleasant overall experience. I would definitely consider coming back again.`,
-    ];
-  }
-
-  if (rating === 4) {
-    return [
-      `Overall, I had a very good experience with ${businessName}. The service was professional and the team was helpful. There is always room for small improvements, but I was satisfied with the experience.`,
-      `Good experience at ${businessName}. The service was handled well and the staff was professional. A few small things could be improved, but overall I was happy with the service.`,
-      `I had a positive experience with ${businessName}. The team was helpful and the service was good overall. With a few minor improvements, the experience could be even better.`,
-      `Quite satisfied with my experience at ${businessName}. The service was good and everything was handled professionally. Overall, I would recommend giving them a try.`,
-      `Good service and a professional experience overall at ${businessName}. There were a couple of minor things that could be better, but I was generally happy with the visit.`,
-    ];
-  }
-
-  if (rating === 3) {
-    return [
-      `My experience with ${businessName} was fairly average. Some parts of the service were good, while a few areas could definitely be improved. Overall, it was an okay experience.`,
-      `The experience at ${businessName} was mixed. The team was helpful in some areas, but there were also things that could have been handled better. Hopefully these areas improve in the future.`,
-      `I had an average experience with ${businessName}. There were some positive aspects, but the overall service could be more consistent.`,
-      `The service at ${businessName} was okay overall. Some things went smoothly while other parts could have been better. There is definitely room for improvement.`,
-      `A fairly average experience. ${businessName} has some good aspects, but improving consistency and customer service would make the overall experience much better.`,
-    ];
-  }
-
-  if (rating === 2) {
-    return [
-      `My experience with ${businessName} was below expectations. Some parts of the service were okay, but there were several areas that could be improved. Hopefully the team takes customer feedback seriously.`,
-      `Unfortunately, I was not completely satisfied with my experience at ${businessName}. The service could have been more organized and attentive. I hope there are improvements going forward.`,
-      `The experience was not as good as I expected. There were some issues with the service at ${businessName} that could definitely be handled better.`,
-      `I expected a better experience from ${businessName}. Some aspects were fine, but there were enough issues to leave me disappointed overall.`,
-      `Not the best experience with ${businessName}. There are several areas where the customer experience could be improved, especially with service and communication.`,
-    ];
-  }
-
-  return [
-    `Unfortunately, my experience with ${businessName} was very disappointing. The service did not meet my expectations and I hope the business works on improving the customer experience.`,
-    `I was quite disappointed with my experience at ${businessName}. The overall service could have been much better and there are several areas that need improvement.`,
-    `My experience was not satisfactory. I expected better service from ${businessName} and hope they take customer feedback into consideration.`,
-    `Unfortunately, I did not have a good experience with ${businessName}. The overall service fell short of my expectations and could use significant improvement.`,
-    `Very disappointing experience overall. I hope ${businessName} improves its service and customer experience in the future.`,
-  ];
 }

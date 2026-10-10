@@ -10,7 +10,7 @@ const reviewSlides = [
     name: "Rohan Verma",
     role: "Regular Patron",
     avatar: "RV",
-    comment: "“The AI review generator QR code made sharing feedback effortless! Our Google reviews spiked by 300% in just two weeks.”"
+    comment: '“The AI review generator QR code made sharing feedback effortless! Our Google reviews spiked by 300% in just two weeks.”'
   },
   {
     business: "Elite Salon & Spa",
@@ -128,7 +128,7 @@ export default function QrGeneratorPage() {
                   ))}
                 </div>
               </div>
-              <p className="text-xs text-slate-200 leading-relaxed italic min-h-[40px]">
+              <p className="text-xs text-slate-200 leading-relaxed italic min-h-10">
                 {currentReview.comment}
               </p>
               <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-300">
@@ -166,18 +166,18 @@ export default function QrGeneratorPage() {
           {/* Mobile Brand Header */}
           <div className="lg:hidden flex items-center justify-between mb-4 pb-3 border-b border-slate-200">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs text-white">DP</div>
+              <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center font-bold text-xs text-white">DP</div>
               <span className="font-extrabold text-sm tracking-wide text-slate-900">DIGITAL PAAJI</span>
             </div>
             <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2.5 py-1 rounded-full font-semibold">AI QR PORTAL</span>
           </div>
 
-          <div className="mb-4">
+          <div>
         
-            <h1 className="font-serif text-xl sm:text-3xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-              <span>Create AI Review QR</span>
+            <h1 className="text-3xl xl:text-4xl font-light text-slate-900 ">
+             Create <span className="font-serif italic font-normal text-indigo-500 "> AI Review QR</span>
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 my-4">
               Enter your business details below to generate an automated review QR code instantly.
             </p>
           </div>
@@ -287,7 +287,7 @@ export default function QrGeneratorPage() {
 
               <button
                 type="submit"
-                className="w-full mt-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold text-xs text-white uppercase tracking-wider transition shadow-lg shadow-indigo-600/30 active:scale-[0.99]"
+                className="w-full mt-1 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-700 font-bold text-xs text-white uppercase tracking-wider transition shadow-lg shadow-indigo-500/30 active:scale-[0.99]"
               >
                 Generate QR Code & Link 🚀
               </button>
@@ -300,7 +300,7 @@ export default function QrGeneratorPage() {
                 </span>
                 <button
                   onClick={() => setGeneratedUrl("")}
-                  className="text-xs text-gray-500 hover:text-indigo-600 underline transition"
+                  className="text-xs text-gray-500 hover:text-indigo-500 underline transition"
                 >
                   Create New
                 </button>
@@ -497,7 +497,7 @@ export default function QrGeneratorPage() {
 
 //           <button
 //             type="submit"
-//             className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700  font-bold text-sm transition shadow-lg shadow-indigo-600/30 active:scale-[0.98]"
+//             className="w-full py-3.5 rounded-xl bg-indigo-500 hover:bg-indigo-700  font-bold text-sm transition shadow-lg shadow-indigo-500/30 active:scale-[0.98]"
 //           >
 //             Generate QR Code & Link 🎯
 //           </button>
