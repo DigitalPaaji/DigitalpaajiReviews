@@ -95,7 +95,7 @@ export async function POST(req) {
       success: true,
       message: "Admin authenticated successfully.",
     });
-
+          
     await createSession(admin._id, "admin", response);
 
     console.log("[ADMIN LOGIN] Session created successfully");

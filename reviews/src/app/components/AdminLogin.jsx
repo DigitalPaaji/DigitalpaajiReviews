@@ -6,27 +6,80 @@ export default function AdminLogin({ setViewMode }) {
   const [password, setPassword] = useState("");
   const [adminError, setAdminError] = useState("");
 
-  const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    setAdminError("");
+
+const handleAdminLogin = async (e) => {
+  e.preventDefault();
+  setAdminError("");
+
+  try {
+    const res = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email.trim(),
+        password,
+      }),
+    });
+
+    // Read the response safely, even if Next.js returns an error page.
+    const responseText = await res.text();
+
+    let data;
 
     try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        setViewMode("admin-dashboard");
-      } else {
-        setAdminError(data.message || "Invalid Admin Master Password");
-      }
-    } catch (err) {
-      setAdminError("Something went wrong. Please check your connection.");
+      data = JSON.parse(responseText);
+    } catch {
+      console.error("Login API returned non-JSON:", responseText);
+      throw new Error(
+        `Server returned an invalid response (HTTP ${res.status}). Check the terminal.`
+      );
     }
-  };
+
+    console.log("Admin login HTTP status:", res.status);
+    console.log("Admin login response:", data);
+
+    if (!res.ok || !data.success) {
+      setAdminError(
+        data.message ||
+          data.debug ||
+          `Login failed with HTTP ${res.status}.`
+      );
+      return;
+    }
+
+    setViewMode("admin-dashboard");
+  } catch (err) {
+    console.error("Admin login request failed:", err);
+    setAdminError(
+      err.message || "Unable to contact the login API."
+    );
+  }
+};
+
+
+  // const handleAdminLogin = async (e) => {
+  //   e.preventDefault();
+  //   setAdminError("");
+
+  //   try {
+  //     const res = await fetch("/api/admin/login", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ email, password }),
+  //     });
+  //     const data = await res.json();
+
+  //     if (data.success) {
+  //       setViewMode("admin-dashboard");
+  //     } else {
+  //       setAdminError(data.message || "Invalid Admin Master Password");
+  //     }
+  //   } catch (err) {
+  //     setAdminError("Something went wrong. Please check your connection.");
+  //   }
+  // };
 
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 shadow-xl">

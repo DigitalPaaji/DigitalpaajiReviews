@@ -106,9 +106,6 @@ if (Array.isArray(data.reviews) && data.reviews.length > 0) {
   throw new Error("No reviews were returned by the API.");
 }
 
-
-
-
       // if (data.reviews && data.reviews.length > 0) {
       //   setReviewsList(data.reviews);
       //   setSelectedReview(data.reviews[0]);
