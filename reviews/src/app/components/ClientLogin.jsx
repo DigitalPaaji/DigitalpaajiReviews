@@ -35,7 +35,7 @@ export default function ClientLogin({
     setRequestStatus("");
     setRequestLoading(true);
 
-    try {
+    try { 
       const res = await fetch("/api/account-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

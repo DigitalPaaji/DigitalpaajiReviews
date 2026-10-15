@@ -2,7 +2,9 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-// Mock different business reviews for the rotating slides on the left
+
+
+
 const reviewSlides = [
   {
     business: "Club 16 Lounge & Bar",

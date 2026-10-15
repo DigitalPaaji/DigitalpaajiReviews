@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export async function POST(req) {
   try {
     const { email, password } = await req.json();
-
+  console.log(email,password)
     if (
       typeof email !== "string" ||
       typeof password !== "string" ||

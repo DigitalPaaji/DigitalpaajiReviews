@@ -6,8 +6,8 @@ export const runtime = "nodejs";
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-
+    const body = await req.json(); 
+  console.log(body)
     const contactName = typeof body.contactName === "string" ? body.contactName.trim() : "";
     const businessName = typeof body.businessName === "string" ? body.businessName.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
